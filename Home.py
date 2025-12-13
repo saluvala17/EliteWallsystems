@@ -9,13 +9,24 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-# Try Google Sheets, fall back to demo mode
+# Check if Google Sheets is configured, otherwise use demo mode
+import os
+
+DEMO_MODE = True  # Default to demo
+
+# Check for Streamlit secrets or credentials file
 try:
-    from google_sheets import get_all_jobs, get_all_customers, get_job_cost_totals, initialize_sheets
-    DEMO_MODE = False
+    if hasattr(st, 'secrets') and 'SPREADSHEET_ID' in st.secrets:
+        from google_sheets import get_all_jobs, get_all_customers, get_job_cost_totals, initialize_sheets
+        DEMO_MODE = False
+    elif os.path.exists(os.path.join(os.path.dirname(__file__), 'credentials.json')):
+        from google_sheets import get_all_jobs, get_all_customers, get_job_cost_totals, initialize_sheets
+        DEMO_MODE = False
 except:
+    pass
+
+if DEMO_MODE:
     from demo_data import get_all_jobs, get_all_customers, get_job_cost_totals, initialize_sheets
-    DEMO_MODE = True
 from utils import format_currency, get_status_color
 
 # Page configuration

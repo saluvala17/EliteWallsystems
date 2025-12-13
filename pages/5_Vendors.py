@@ -4,16 +4,24 @@ Vendors Management Page
 import streamlit as st
 import pandas as pd
 import sys
+import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+# Check if Google Sheets is configured
+DEMO_MODE = True
 try:
-    from google_sheets import (
-        get_all_vendors, get_vendor_by_id,
-        create_vendor, update_vendor, delete_vendor
-    )
+    if hasattr(st, 'secrets') and 'SPREADSHEET_ID' in st.secrets:
+        from google_sheets import (
+            get_all_vendors, get_vendor_by_id,
+            create_vendor, update_vendor, delete_vendor
+        )
+        DEMO_MODE = False
 except:
+    pass
+
+if DEMO_MODE:
     from demo_data import (
         get_all_vendors, get_vendor_by_id,
         create_vendor, update_vendor, delete_vendor

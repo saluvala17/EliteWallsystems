@@ -4,16 +4,24 @@ Customers (General Contractors) Management Page
 import streamlit as st
 import pandas as pd
 import sys
+import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+# Check if Google Sheets is configured
+DEMO_MODE = True
 try:
-    from google_sheets import (
-        get_all_customers, get_customer_by_id,
-        create_customer, update_customer, delete_customer
-    )
+    if hasattr(st, 'secrets') and 'SPREADSHEET_ID' in st.secrets:
+        from google_sheets import (
+            get_all_customers, get_customer_by_id,
+            create_customer, update_customer, delete_customer
+        )
+        DEMO_MODE = False
 except:
+    pass
+
+if DEMO_MODE:
     from demo_data import (
         get_all_customers, get_customer_by_id,
         create_customer, update_customer, delete_customer

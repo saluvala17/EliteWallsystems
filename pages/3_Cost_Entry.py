@@ -5,16 +5,24 @@ import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 import sys
+import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+# Check if Google Sheets is configured
+DEMO_MODE = True
 try:
-    from google_sheets import (
-        get_all_jobs, get_active_jobs, get_job_by_id, get_job_cost_totals,
-        get_weekly_costs_by_job, get_weekly_cost_entry, upsert_weekly_cost
-    )
+    if hasattr(st, 'secrets') and 'SPREADSHEET_ID' in st.secrets:
+        from google_sheets import (
+            get_all_jobs, get_active_jobs, get_job_by_id, get_job_cost_totals,
+            get_weekly_costs_by_job, get_weekly_cost_entry, upsert_weekly_cost
+        )
+        DEMO_MODE = False
 except:
+    pass
+
+if DEMO_MODE:
     from demo_data import (
         get_all_jobs, get_active_jobs, get_job_by_id, get_job_cost_totals,
         get_weekly_costs_by_job, get_weekly_cost_entry, upsert_weekly_cost

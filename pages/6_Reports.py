@@ -7,13 +7,21 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import sys
+import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+# Check if Google Sheets is configured
+DEMO_MODE = True
 try:
-    from google_sheets import get_all_jobs, get_all_customers, get_job_cost_totals, get_all_weekly_costs
+    if hasattr(st, 'secrets') and 'SPREADSHEET_ID' in st.secrets:
+        from google_sheets import get_all_jobs, get_all_customers, get_job_cost_totals, get_all_weekly_costs
+        DEMO_MODE = False
 except:
+    pass
+
+if DEMO_MODE:
     from demo_data import get_all_jobs, get_all_customers, get_job_cost_totals, get_all_weekly_costs
 from utils import format_currency, export_to_excel
 from brand_styles import get_page_styling, get_sidebar_logo, BRAND_GREEN, BRAND_GREEN_DARK, BRAND_GRAY
