@@ -1,0 +1,15 @@
+[theme]
+# Elite Wall Systems Brand Colors
+primaryColor = "#7AB930"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F7F2"
+textColor = "#2D2D2D"
+font = "sans serif"
+
+[server]
+headless = true
+port = 8501
+enableCORS = false
+
+[browser]
+gatherUsageStats = false
