@@ -1,13 +1,190 @@
 """
 Elite Wall Systems - Job Costing Application
 Main entry point - Google Sheets Version
+With Simple Authentication
 """
 import streamlit as st
 import sys
 from pathlib import Path
+import hashlib
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
+
+# ============================================
+# SIMPLE AUTHENTICATION
+# ============================================
+
+# Default credentials (you can add more users here)
+USERS = {
+    "admin@elitewallsystems.com": {
+        "password": "Admin@123",
+        "name": "System Admin",
+        "role": "admin"
+    },
+    # Add more users as needed:
+    # "user@elitewallsystems.com": {
+    #     "password": "User@123",
+    #     "name": "Field User",
+    #     "role": "user"
+    # }
+}
+
+
+def check_login(email: str, password: str) -> dict:
+    """Verify login credentials"""
+    email = email.lower().strip()
+    if email in USERS:
+        if USERS[email]["password"] == password:
+            return {
+                "email": email,
+                "name": USERS[email]["name"],
+                "role": USERS[email]["role"]
+            }
+    return None
+
+
+def render_login_page():
+    """Render the login page"""
+    # Elite Wall Systems Brand Colors
+    BRAND_GREEN = "#7AB930"
+    BRAND_GRAY = "#2D2D2D"
+    
+    st.markdown(f"""
+    <style>
+        .login-container {{
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+        .login-header {{
+            text-align: center;
+            margin-bottom: 2rem;
+        }}
+        .login-logo {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            margin-bottom: 1rem;
+        }}
+        .login-chevron {{
+            width: 50px;
+            height: 10px;
+            background: linear-gradient(90deg, {BRAND_GREEN} 0%, #5A9020 100%);
+            clip-path: polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%, 15% 50%);
+        }}
+        .login-title {{
+            font-size: 1.8rem;
+            margin-top: 0.5rem;
+        }}
+        .login-title-bold {{
+            color: {BRAND_GREEN};
+            font-weight: 700;
+        }}
+        .login-title-light {{
+            color: {BRAND_GRAY};
+            font-weight: 300;
+        }}
+        .security-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }}
+    </style>
+    
+    <div class="login-header">
+        <div class="login-logo">
+            <div class="login-chevron"></div>
+            <div class="login-chevron"></div>
+            <div class="login-chevron"></div>
+        </div>
+        <div class="login-title">
+            <span class="login-title-bold">Elite</span>
+            <span class="login-title-light">Wall Systems</span>
+        </div>
+        <p style="color: #666; margin-top: 0.5rem;">Job Costing System</p>
+        <div class="security-badge">🔒 Secure Login</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    with st.form("login_form"):
+        email = st.text_input("Email", placeholder="admin@elitewallsystems.com")
+        password = st.text_input("Password", type="password", placeholder="••••••••")
+        submitted = st.form_submit_button("Sign In", use_container_width=True)
+        
+        if submitted:
+            if not email or not password:
+                st.error("Please enter both email and password")
+            else:
+                user = check_login(email, password)
+                if user:
+                    st.session_state.authenticated = True
+                    st.session_state.user = user
+                    st.success(f"Welcome back, {user['name']}!")
+                    st.rerun()
+                else:
+                    st.error("Invalid email or password")
+    
+    st.markdown("""
+    <div style="text-align: center; margin-top: 2rem; color: #aaa; font-size: 0.8rem;">
+        <p>Default: admin@elitewallsystems.com / Admin@123</p>
+        <p>Powered by Forge N Systems</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def logout_user():
+    """Clear user session"""
+    st.session_state.authenticated = False
+    st.session_state.user = None
+
+
+def require_login() -> bool:
+    """Check if user is logged in"""
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    if 'user' not in st.session_state:
+        st.session_state.user = None
+    return st.session_state.authenticated and st.session_state.user is not None
+
+
+def get_current_user() -> dict:
+    """Get current logged in user"""
+    return st.session_state.get('user', None)
+
+
+# ============================================
+# PAGE CONFIGURATION
+# ============================================
+
+st.set_page_config(
+    page_title="Elite Wall Systems",
+    page_icon="🏢",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ============================================
+# CHECK AUTHENTICATION FIRST
+# ============================================
+
+if not require_login():
+    render_login_page()
+    st.stop()
+
+# ============================================
+# USER IS AUTHENTICATED - CONTINUE WITH APP
+# ============================================
 
 # Check if Google Sheets is configured, otherwise use demo mode
 import os
@@ -28,14 +205,6 @@ except:
 if DEMO_MODE:
     from demo_data import get_all_jobs, get_all_customers, get_job_cost_totals, initialize_sheets
 from utils import format_currency, get_status_color
-
-# Page configuration
-st.set_page_config(
-    page_title="Elite Wall Systems",
-    page_icon="🏢",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Elite Wall Systems Brand Colors
 BRAND_GREEN = "#7AB930"
@@ -213,6 +382,25 @@ st.markdown(f"""
         margin-bottom: 1rem;
     }}
     
+    /* User info badge */
+    .user-badge {{
+        background-color: {BRAND_GREEN};
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }}
+    
+    .user-badge-name {{
+        font-weight: 600;
+        font-size: 0.95rem;
+    }}
+    
+    .user-badge-role {{
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }}
+    
     /* Footer */
     .footer {{
         text-align: center;
@@ -227,6 +415,9 @@ st.markdown(f"""
     }}
 </style>
 """, unsafe_allow_html=True)
+
+# Get current user
+user = get_current_user()
 
 # Sidebar
 with st.sidebar:
@@ -245,10 +436,23 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    if DEMO_MODE:
-        st.markdown('<div class="demo-badge">🎮 DEMO MODE</div>', unsafe_allow_html=True)
+    # User info
+    st.markdown(f"""
+    <div class="user-badge">
+        <div class="user-badge-name">👤 {user['name']}</div>
+        <div class="user-badge-role">{user['role'].title()}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Logout button
+    if st.button("🚪 Logout", use_container_width=True):
+        logout_user()
+        st.rerun()
     
     st.markdown("---")
+    
+    if DEMO_MODE:
+        st.markdown('<div class="demo-badge">🎮 DEMO MODE</div>', unsafe_allow_html=True)
     
     # Navigation with actual page links
     st.page_link("Home.py", label="🏠 Home", icon=None)
@@ -416,6 +620,6 @@ with col3:
 st.markdown(f"""
 <div class="footer">
     <span class="footer-brand">Elite Wall Systems</span> Job Costing System<br>
-    <span style="font-size: 0.75rem;">Anil Pachunuri, PE LEED AP | Chief Estimator</span>
+    <span style="font-size: 0.75rem;">Powered by Forge N Systems</span>
 </div>
 """, unsafe_allow_html=True)
